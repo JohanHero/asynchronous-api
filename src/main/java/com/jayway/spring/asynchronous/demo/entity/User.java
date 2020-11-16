@@ -1,5 +1,6 @@
 package com.jayway.spring.asynchronous.demo.entity;
 
+import java.util.concurrent.CompletableFuture;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
