@@ -1,6 +1,7 @@
 package com.jayway.spring.asynchronous.demo.entity;
 
 import java.util.concurrent.CompletableFuture;
+import javax.management.ConstructorParameters;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -12,7 +13,8 @@ import lombok.NoArgsConstructor;
 @Data
 @Entity
 @Table(name = "USER_TBL")
-
+@AllArgsConstructor
+@NoArgsConstructor
 public class User {
 
   @Id

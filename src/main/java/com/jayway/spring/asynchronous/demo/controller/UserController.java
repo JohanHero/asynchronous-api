@@ -1,19 +1,20 @@
 package com.jayway.spring.asynchronous.demo.controller;
 
 import com.jayway.spring.asynchronous.demo.entity.User;
+import com.jayway.spring.asynchronous.demo.repository.UserRepository;
 import com.jayway.spring.asynchronous.demo.service.UserService;
-import java.math.BigInteger;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import org.hibernate.annotations.NotFound;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.repository.query.Param;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,16 +22,26 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+
 @RestController
 public class UserController {
 
   @Autowired
   private UserService service;
 
+  @Autowired
+  private UserRepository repository;
+
   Logger logger = LoggerFactory.getLogger(UserController.class);
 
-  @PostMapping(value = "/users", consumes = {
-      MediaType.MULTIPART_FORM_DATA_VALUE}, produces = "application/json")
+  @ExceptionHandler(NoSuchElementException.class)
+  public ResponseEntity handleException(NoSuchElementException exception) {
+
+    //exception.printStackTrace();
+    return new ResponseEntity<>("Id not found, exception: " + exception, HttpStatus.NOT_FOUND);
+  }
+
+  @PostMapping(value = "/users", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE}, produces = "application/json")
   public ResponseEntity SaveUsers(@RequestParam(value = "files") MultipartFile[] files) throws Exception {
     for (MultipartFile file : files) {
       service.saveUsers(file);
@@ -50,14 +61,13 @@ public class UserController {
   }
 
   @GetMapping(value = "/users/{id}", produces = "application/json")
-  public CompletableFuture<ResponseEntity> findUserById(@PathVariable("id") int id)
-      throws InterruptedException {
+  public CompletableFuture<ResponseEntity<User>> findUserById(@PathVariable("id") int id) throws InterruptedException {
 
     logger.info("Get single user by id {} {}" + Thread.currentThread().getName(), id);
 
     CompletableFuture<User> u = service.getUserdById(id);
 
-    logger.info("skickat iväg en tråd att lösa uppgiften — får se vad som kommer tillbaka {}" + Thread.currentThread()
+    logger.info("step right before returning the value — if there is a value {}" + Thread.currentThread()
         .getName());
 
     return u.thenApply(ResponseEntity::ok);

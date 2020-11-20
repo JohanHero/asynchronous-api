@@ -10,13 +10,12 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 import javax.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -31,18 +30,6 @@ public class UserService {
 
   Object target;
   Logger logger = LoggerFactory.getLogger(UserService.class);
-
-  @Async
-  public Future<String> ping() {
-    System.out.println("Execute method asynchronously - " + Thread.currentThread().getName());
-    try {
-      Thread.sleep(5000);
-      return new AsyncResult<String>("" + "pong !!!!");
-    } catch (InterruptedException e) {
-
-    }
-    return null;
-  }
 
   private List<User> parseCSVFile(final MultipartFile file) throws Exception {
     final List<User> users = new ArrayList<>();
@@ -120,40 +107,9 @@ public class UserService {
   @Async
   public CompletableFuture<User> getUserdById(int id) throws InterruptedException {
 
-    CompletableFuture<User> futureUser = CompletableFuture.supplyAsync(() -> {
-      try {
-        Thread.sleep(5000);
-      } catch (InterruptedException e) {
-        e.printStackTrace();
-      }
-      System.out.println("Kollar först här ");
-      return repository.findById(id).orElseThrow();
-    })
-        .exceptionally(exception -> {
-          System.out.println("IDt finns inte och därför skickar den exception");
-          System.err.println("" + exception);
-          return null;
-        });
-
-    logger.info("last step before returning the User " + Thread.currentThread().getName());
-    return futureUser;
+    return CompletableFuture.supplyAsync(() -> {
+      return repository.findById(id).get();
+    });
   }
-
-  @Async
-  public void completeUserdById(CompletableFuture<User> completableFuture, int id)
-      throws InterruptedException {
-
-    Thread.sleep(5000);
-    logger.info("Trying to gather the right information {} with thread: " + Thread.currentThread()
-        .getName());
-    User a = repository.findById(id).orElseThrow(() -> new EntityNotFoundException());
-    try {
-      completableFuture.complete(a);
-    } catch (Exception e) {
-      logger.error("failed to complete the findById", e);
-      completableFuture.completeExceptionally(e);
-    }
-  }
-
 
 }
